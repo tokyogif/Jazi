@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Tyler & Jazmyne Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap" rel="stylesheet">
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* Add a background patterned image */
+        body {
+            font-family: 'Bubblegum Sans', cursive, Arial, sans-serif;
+            background-color: #fff5f7;
+            background-image: url('data:image/svg+xml;utf8,<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="2" fill="%23ffc0cb" opacity="0.3" /></svg>');
+            background-size: 30px 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            -webkit-text-size-adjust: 100%;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            height: 100vh;
+            max-height: 600px;
+            background-color: #fff;
+            background-image: radial-gradient(#ffd6ff 2px, transparent 2px);
+            background-size: 30px 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .character-area {
+            height: 65%;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-top: 20px;
+        }
+        
+        .character {
+            height: 300px;
+            transition: transform 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+        
+        /* Character specific adjustments */
+        #character1 {
+            padding-bottom: 10px; /* Adjust Tyler's vertical position */
+        }
+        
+        #character2 {
+            padding-bottom: 20px; /* Adjust Jazmyne's vertical position */
+        }
+        
+        .character img {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
+            /* Remove background */
+            -webkit-filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+            background-color: transparent !important;
+        }
+        
+        /* Add CSS to handle the background removal for the character images */
+        #character1 img, #character2 img {
+            background-color: transparent !important;
+            mix-blend-mode: multiply; /* This helps with white backgrounds */
+        }
+        
+        .character.active {
+            transform: translateY(-10px) scale(1.05);
+        }
+        
+        .dialogue-box {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 4px solid #ffafcc;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        .name-tag {
+            position: absolute;
+            top: -20px;
+            left: 20px;
+            background-color: #a2d2ff;
+            color: white;
+            padding: 5px 20px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dialogue-text {
+            font-family: 'Bubblegum Sans', cursive, Arial, sans-serif;
+            font-size: 20px;
+            color: #333;
+            margin-top: 10px;
+            min-height: 60px;
+        }
+        
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .option-button {
+            background-color: #cdb4db;
+            border: 2px solid #ffafcc;
+            border-radius: 15px;
+            padding: 10px 20px;
+            font-family: 'Bubblegum Sans', cursive, Arial, sans-serif;
+            font-size: 18px;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .option-button:hover {
+            background-color: #ffafcc;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        input.option-button {
+            padding: 12px 20px;
+            background-color: #f8edeb;
+            width: 100%;
+        }
+        
+        .heart-animation {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            z-index: 100;
+            display: none;
+            filter: drop-shadow(0 0 10px rgba(255, 133, 162, 0.5));
+        }
+        
+        @keyframes heartbeat {
+            0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 133, 162, 0.5)); }
+            15% { transform: scale(1.15); filter: drop-shadow(0 0 15px rgba(255, 133, 162, 0.8)); }
+            30% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 133, 162, 0.5)); }
+            45% { transform: scale(1.15); filter: drop-shadow(0 0 15px rgba(255, 133, 162, 0.8)); }
+            60% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 133, 162, 0.5)); }
+        }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        
+        .heart {
+            fill: #FF85A2;
+            transform-origin: center;
+            animation: heartbeat 1.5s infinite;
+            filter: drop-shadow(0 0 8px rgba(255, 133, 162, 0.7));
+        }
+        
+        .love-text {
+            font-family: 'Bubblegum Sans', cursive, Arial, sans-serif;
+            font-size: 28px;
+            font-weight: bold;
+            fill: #FF85A2;
+            text-anchor: middle;
+            opacity: 0;
+            animation: fadeIn 2s forwards;
+            animation-delay: 0.5s;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+        
+        .dialogue {
+            display: none;
+        }
+        
+        /* Transition effects */
+        .fade-in {
+            animation: fadeIn 0.5s forwards;
+        }
+        
+        /* Mobile responsive adjustments */
+        @media (max-width: 767px) {
+            .game-container {
+                width: 100%;
+                height: 100vh;
+                border-radius: 0;
+                max-height: none;
+            }
+            
+            .dialogue-box {
+                width: 85%;
+                padding: 15px;
+                bottom: 10px;
+            }
+            
+            .dialogue-text {
+                font-size: 18px;
+            }
+            
+            .option-button {
+                font-size: 16px;
+                padding: 8px 16px;
+            }
+            
+            .character {
+                height: 220px;
+            }
+            
+            .heart-animation {
+                width: 250px;
+                height: 250px;
+            }
+            
+            .love-text {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="character-area">
+            <div id="character1" class="character">
+                <img src="tyler3.png" alt="Tyler">
+            </div>
+            <div id="character2" class="character">
+                <img src="jazmyne3.png" alt="Jazmyne">
+            </div>
+        </div>
+        
+        <div class="dialogue-box">
+            <!-- Dynamic content will be loaded here -->
+            <div id="content-container">
+                <!-- Default starting state -->
+                <div id="intro" class="dialogue" style="display: block;">
+                    <div class="name-tag">Tyler</div>
+                    <div class="dialogue-text">Hi baby! I made this special for you. I have a few questions but just asking them on the phone sounded boring</div>
+                    <div class="options-container">
+                        <button class="option-button" onclick="showDialogue('question1')">Continue</button>
+                    </div>
+                </div>
+                
+                <!-- Question 1 -->
+                <div id="question1" class="dialogue">
+                    <div class="name-tag">Tyler</div>
+                    <div class="dialogue-text">Question 1: When we're in Chicago, what dinner would you like for our first date?</div>
+                    <div class="options-container">
+                        <button class="option-button" onclick="selectOption('question1', 'Nandos'); showDialogue('question2')">Nandos</button>
+                        <button class="option-button" onclick="selectOption('question1', 'Fancy hotel dinner'); showDialogue('question2')">Fancy hotel dinner</button>
+                        <button class="option-button" onclick="selectOption('question1', 'El Nuevo Vallarta'); showDialogue('question2')">El Nuevo Vallarta</button>
+                        <input type="text" class="option-button" id="q1-input" placeholder="Something else... (Press Enter to submit)">
+                    </div>
+                </div>
+                
+                <!-- Question 2 -->
+                <div id="question2" class="dialogue">
+                    <div class="name-tag">Tyler</div>
+                    <div class="dialogue-text">Question 2: Is there a particular activity you'd like to do over the three days?</div>
+                    <div class="options-container">
+                        <button class="option-button" onclick="selectOption('question2', 'Shopping with outfits'); showDialogue('question3')">Shopping we make each other cute outfits and where them the next day</button>
+                        <button class="option-button" onclick="selectOption('question2', 'Art gallery'); showDialogue('question3')">Art gallery</button>
+                        <button class="option-button" onclick="selectOption('question2', 'Boat tour'); showDialogue('question3')">Boat tour</button>
+                        <input type="text" class="option-button" id="q2-input" placeholder="Something else... (Press Enter to submit)">
+                    </div>
+                </div>
+                
+                <!-- Question 3 -->
+                <div id="question3" class="dialogue">
+                    <div class="name-tag">Tyler</div>
+                    <div class="dialogue-text">Question 3: Where would you like to shop?</div>
+                    <div class="options-container">
+                        <button class="option-button" onclick="selectOption('question3', 'American mall'); showDialogue('question4')">A big ass American mall</button>
+                        <button class="option-button" onclick="selectOption('question3', 'Vintage shops'); showDialogue('question4')">Cool vintage shops</button>
+                        <button class="option-button" onclick="selectOption('question3', 'Fancy place'); showDialogue('question4')">Somewhere fancy</button>
+                        <input type="text" class="option-button" id="q3-input" placeholder="Tell me where... (Press Enter to submit)">
+                    </div>
+                </div>
+                
+                <!-- Question 4 -->
+                <div id="question4" class="dialogue">
+                    <div class="name-tag">Tyler</div>
+                    <div class="dialogue-text">Question 4: I'm buying a new sex toy, what should I buy us?</div>
+                    <div class="options-container">
+                        <button class="option-button" onclick="selectOption('question4', 'Butt plug'); showDialogue('question5')">A cool butt plug</button>
+                        <button class="option-button" onclick="selectOption('question4', 'Restraints'); showDialogue('question5')">Full restraints e.g cuffs, rope, mask, perhaps even a ball gag</button>
+                        <button class="option-button" onclick="selectOption('question4', 'Dildo'); showDialogue('question5')">Another dildo- because can we ever have too many?</button>
+                        <input type="text" class="option-button" id="q4-input" placeholder="Something else... (Press Enter to submit)">
+                    </div>
+                </div>
+                
+                <!-- Question 5 -->
+                <div id="question5" class="dialogue">
+                    <div class="name-tag">Tyler</div>
+                    <div class="dialogue-text">Question 5: I want public sex. Where should we?</div>
+                    <div class="options-container">
+                        <button class="option-button" onclick="selectOption('question5', 'Graveyard'); showDialogue('question6')">Graveyard</button>
+                        <button class="option-button" onclick="selectOption('question5', 'River'); showDialogue('question6')">Down by the river</button>
+                        <button class="option-button" onclick="selectOption('question5', 'Woods'); showDialogue('question6')">The woods behind yours</button>
+                        <input type="text" class="option-button" id="q5-input" placeholder="Something else... (Press Enter to submit)">
+                    </div>
+                </div>
+                
+                <!-- Question 6 -->
+                <div id="question6" class="dialogue">
+                    <div class="name-tag">Tyler</div>
+                    <div class="dialogue-text">Question 6: What movie should we watch first?</div>
+                    <div class="options-container">
+                        <button class="option-button" onclick="selectOption('question6', 'Star Wars'); showDialogue('question7')">Star Wars</button>
+                        <button class="option-button" onclick="selectOption('question6', 'Star Wars'); showDialogue('question7')">Star Wars</button>
+                        <button class="option-button" onclick="selectOption('question6', 'Star Wars'); showDialogue('question7')">Star Wars</button>
+                        <input type="text" class="option-button" id="q6-input" placeholder="Don't answer with anything else(Press Enter to submit)">
+                    </div>
+                </div>
+                
+                <!-- Question 7 -->
+                <div id="question7" class="dialogue">
+                    <div class="name-tag">Tyler</div>
+                    <div class="dialogue-text">Question 7: I want you make you the happiest woman. Which one appeals the most?</div>
+                    <div class="options-container">
+                        <button class="option-button" onclick="selectOption('question7', 'Back rubs'); showDialogue('question8')">Rubbing your back and obviously ass, you're a sucker for booty rubs</button>
+                        <button class="option-button" onclick="selectOption('question7', 'Feet kisses'); showDialogue('question8')">Kissing your feet</button>
+                        <button class="option-button" onclick="selectOption('question7', 'Hugs'); showDialogue('question8')">Hugs from behind</button>
+                        <input type="text" class="option-button" id="q7-input" placeholder="Something else... (Press Enter to submit)">
+                    </div>
+                </div>
+                
+                <!-- Question 8 -->
+                <div id="question8" class="dialogue">
+                    <div class="name-tag">Tyler</div>
+                    <div class="dialogue-text">Question 8: Where should we go on holiday together on our European trip?</div>
+                    <div class="options-container">
+                        <button class="option-button" onclick="selectOption('question8', 'Spain'); showDialogue('ending')">Spain so you stop hating on them mfs</button>
+                        <button class="option-button" onclick="selectOption('question8', 'Germany'); showDialogue('ending')">Germany and wild out at the sex clubs and have orgies</button>
+                        <button class="option-button" onclick="selectOption('question8', 'Switzerland'); showDialogue('ending')">Switzerland</button>
+                        <input type="text" class="option-button" id="q8-input" placeholder="Something else... (Press Enter to submit)">
+                    </div>
+                </div>
+                
+                <!-- Ending -->
+                <div id="ending" class="dialogue">
+                    <div class="name-tag">Tyler</div>
+                    <div class="dialogue-text">I find it difficult to put into words how much you mean to me, I wanna go on a million more adventures with you. You're my best friend Jazmyne</div>
+                    <div class="options-container">
+                        <button class="option-button" onclick="showDialogue('heart_animation')">Continue</button>
+                    </div>
+                </div>
+                
+                <!-- Heart Animation -->
+                <div id="heart_animation" class="dialogue">
+                    <div class="name-tag">Tyler</div>
+                    <div class="dialogue-text">p.s i really like your bum and the way it jiggles when you shake it</div>
+                    <div class="options-container">
+                        <button class="option-button" onclick="showDialogue('intro')">Restart conversation</button>
+                        <button class="option-button" onclick="emailResponsesToTyler()">Send responses to Tyler</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="heart-animation" id="heartAnimation">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+                <!-- Main heart -->
+                <path class="heart" d="M150,220 C150,220 255,155 255,95 C255,45 205,30 180,55 C165,70 150,85 150,85 C150,85 135,70 120,55 C95,30 45,45 45,95 C45,155 150,220 150,220 Z" />
+                <!-- Love you text -->
+                <text class="love-text" x="150" y="270">i love you</text>
+            </svg>
+        </div>
+    </div>
+
+    <script>
+        // Store for conversation history and responses
+        const conversationStore = {
+            responses: {},
+            history: [],
+            
+            saveResponse(questionId, answer) {
+                this.responses[questionId] = answer;
+                localStorage.setItem('dialogueResponses', JSON.stringify(this.responses));
+                console.log('Saved response:', questionId, answer);
+            },
+            
+            loadResponses() {
+                const saved = localStorage.getItem('dialogueResponses');
+                if (saved) {
+                    this.responses = JSON.parse(saved);
+                }
+                return this.responses;
+            },
+            
+            addToHistory(speaker, text) {
+                this.history.push({ speaker, text });
+                localStorage.setItem('dialogueHistory', JSON.stringify(this.history));
+            },
+            
+            loadHistory() {
+                const saved = localStorage.getItem('dialogueHistory');
+                if (saved) {
+                    this.history = JSON.parse(saved);
+                }
+                return this.history;
+            }
+        };
+
+        // Load any previous session data
+        conversationStore.loadResponses();
+        conversationStore.loadHistory();
+        
+        // Character activation
+        function activateCharacter(characterId) {
+            // Reset all characters
+            document.querySelectorAll('.character').forEach(char => {
+                char.classList.remove('active');
+            });
+            
+            // If both, activate both characters
+            if (characterId === 'both') {
+                document.getElementById('character1').classList.add('active');
+                document.getElementById('character2').classList.add('active');
+            } else if (characterId) {
+                // Activate specified character
+                document.getElementById(characterId).classList.add('active');
+            }
+        }
+        
+        // Show heart animation
+        function showHeart(show) {
+            document.getElementById('heartAnimation').style.display = show ? 'block' : 'none';
+        }
+        
+        // Handle dialogue transitions
+        function showDialogue(dialogueId) {
+            // Hide all dialogues
+            document.querySelectorAll('.dialogue').forEach(dialogue => {
+                dialogue.style.display = 'none';
+            });
+            
+            // Show the selected dialogue
+            const targetDialogue = document.getElementById(dialogueId);
+            if (targetDialogue) {
+                targetDialogue.style.display = 'block';
+                
+                // Special handling for specific dialogues
+                if (dialogueId === 'heart_animation') {
+                    activateCharacter('both');
+                    showHeart(true);
+                } else if (dialogueId.startsWith('question')) {
+                    // All questions are from Tyler
+                    activateCharacter('character1');
+                    showHeart(false);
+                } else if (dialogueId === 'intro') {
+                    activateCharacter('character1');
+                    showHeart(false);
+                } else if (dialogueId === 'ending') {
+                    activateCharacter('character1');
+                    showHeart(false);
+                }
+                
+                // Scroll the dialogue into view if needed
+                targetDialogue.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        // Store selected option
+        function selectOption(questionId, answer) {
+            conversationStore.saveResponse(questionId, answer);
+        }
+        
+        // Handle text input
+        function handleTextInput(questionId, inputId, nextDialogue) {
+            const inputElement = document.getElementById(inputId);
+            const value = inputElement.value.trim();
+            
+            if (value) {
+                selectOption(questionId, value);
+                inputElement.value = ''; // Clear input
+                showDialogue(nextDialogue);
+            }
+        }
+        
+        // Add input field Enter key support
+        document.querySelectorAll('input.option-button').forEach(input => {
+            input.addEventListener('keyup', function(event) {
+                if (event.key === 'Enter') {
+                    // Get the input ID and extract the question number
+                    const inputId = this.id;
+                    const questionNumber = inputId.replace('q', '').replace('-input', '');
+                    
+                    // Determine next dialogue
+                    const currentDialogue = 'question' + questionNumber;
+                    let nextDialogue;
+                    
+                    if (questionNumber < 8) {
+                        nextDialogue = 'question' + (parseInt(questionNumber) + 1);
+                    } else {
+                        nextDialogue = 'ending';
+                    }
+                    
+                    handleTextInput(currentDialogue, inputId, nextDialogue);
+                }
+            });
+        });
+        
+        // Initialize the dialogue system
+        window.onload = function() {
+            // Start with intro
+            showDialogue('intro');
+            activateCharacter('character1');
+        };
+        
+        // Email responses to Tyler
+        function emailResponsesToTyler() {
+            const responses = conversationStore.responses;
+            
+            // Format responses nicely for email
+            let emailBody = "Tyler & Jazmyne Chat Responses:\n\n";
+            
+            // Question descriptions for better context
+            const questionDescriptions = {
+                question1: "When we're in Chicago, what dinner would you like for our first date?",
+                question2: "Is there a particular activity you'd like to do over the three days?",
+                question3: "Where would you like to shop?",
+                question4: "I'm buying a new sex toy, what should I buy us?",
+                question5: "I want public sex. Where should we?",
+                question6: "What movie should we watch first?",
+                question7: "I want you make you the happiest woman. Which one appeals the most?",
+                question8: "Where should we go on holiday together on our European trip?"
+            };
+            
+            // Add each question and answer to the email body
+            for (let i = 1; i <= 8; i++) {
+                const questionId = "question" + i;
+                const answer = responses[questionId] || "No answer provided";
+                const question = questionDescriptions[questionId];
+                
+                emailBody += `Question ${i}: ${question}\n`;
+                emailBody += `Answer: ${answer}\n\n`;
+            }
+            
+            // Add timestamp
+            const now = new Date();
+            emailBody += `\nResponses submitted on: ${now.toLocaleString()}`;
+            
+            // Create mailto link with Tyler's email
+            const subject = encodeURIComponent("Jazmyne's Chat Responses");
+            const body = encodeURIComponent(emailBody);
+            const mailtoLink = `mailto:tylergradwell@gmail.com?subject=${subject}&body=${body}`;
+            
+            // Open email client
+            window.open(mailtoLink);
+            
+            // Show confirmation
+            alert("Opening email to send responses to Tyler!");
+        }
+    </script>
+</body>
+</html>
